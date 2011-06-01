@@ -169,6 +169,8 @@ libgimpwidgets_2_0_la_sources = \
 	gimpunitentry.h			\
 	gimpunitmenu.c			\
 	gimpunitmenu.h			\
+	gimpunitparser.c   \
+	gimpunitparser.h   \
 	gimpunitstore.c			\
 	gimpunitstore.h			\
 	gimpwidgets-error.c		\
