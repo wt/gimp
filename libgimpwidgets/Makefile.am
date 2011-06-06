@@ -167,6 +167,8 @@ libgimpwidgets_2_0_la_sources = \
 	gimpunitadjustment.h		\
 	gimpunitentry.c			\
 	gimpunitentry.h			\
+	gimpunitentrytable.c			\
+	gimpunitentrytable.h			\
 	gimpunitmenu.c			\
 	gimpunitmenu.h			\
 	gimpunitparser.c   \
