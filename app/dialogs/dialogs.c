@@ -30,6 +30,9 @@
 
 #include "config/gimpguiconfig.h"
 
+#include "display/gimpdisplay.h"
+#include "display/gimpdisplayshell.h"
+
 #include "core/gimp.h"
 #include "core/gimpcontext.h"
 #include "core/gimplist.h"
@@ -40,6 +43,7 @@
 #include "widgets/gimpmenufactory.h"
 #include "widgets/gimpsessioninfo.h"
 #include "widgets/gimpsessioninfo-aux.h"
+#include "widgets/gimpsessionmanaged.h"
 #include "widgets/gimptoolbox.h"
 
 #include "dialogs.h"
@@ -77,7 +81,7 @@ GimpContainer *global_recent_docks = NULL;
     NULL                   /* stock_id         */, \
     NULL                   /* help_id          */, \
     NULL                   /* new_func         */, \
-    NULL                   /* restore_func     */, \
+    dialogs_restore_window /* restore_func     */, \
     0                      /* view_size        */, \
     singleton              /* singleton        */, \
     TRUE                   /* session_managed  */, \
@@ -206,6 +210,9 @@ GimpContainer *global_recent_docks = NULL;
 
 
 static GtkWidget * dialogs_restore_dialog (GimpDialogFactory *factory,
+                                           GdkScreen         *screen,
+                                           GimpSessionInfo   *info);
+static GtkWidget * dialogs_restore_window (GimpDialogFactory *factory,
                                            GdkScreen         *screen,
                                            GimpSessionInfo   *info);
 
@@ -441,9 +448,33 @@ dialogs_restore_dialog (GimpDialogFactory *factory,
                                       GIMP_DIALOG_VISIBILITY_HIDDEN :
                                       GIMP_DIALOG_VISIBILITY_VISIBLE));
 
-  if (dialog && gimp_session_info_get_aux_info (info))
-    gimp_session_info_aux_set_list (dialog,
-                                    gimp_session_info_get_aux_info (info));
+  return dialog;
+}
+
+/**
+ * dialogs_restore_window:
+ * @factory:
+ * @screen:
+ * @info:
+ *
+ * "restores" the image window. We don't really restore anything since
+ * the image window is created earlier, so we just look for and return
+ * the already-created image window.
+ *
+ * Returns: 
+ **/
+static GtkWidget *
+dialogs_restore_window (GimpDialogFactory *factory,
+                        GdkScreen         *screen,
+                        GimpSessionInfo   *info)
+{
+  /* FIXME: We can't always use the empty display here */
+  Gimp             *gimp    = gimp_dialog_factory_get_context (factory)->gimp;
+  GimpDisplay      *display = GIMP_DISPLAY (gimp_get_empty_display (gimp));
+  GimpDisplayShell *shell   = gimp_display_get_shell (display);
+  GtkWidget        *dialog;
+
+  dialog = GTK_WIDGET (gimp_display_shell_get_window (shell));
 
   return dialog;
 }
