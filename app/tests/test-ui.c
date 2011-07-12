@@ -187,6 +187,8 @@ automatic_tab_style (GimpTestFixture *fixture,
 
   dockable = GIMP_DOCKABLE (channel_dockable);
 
+  gimp_test_run_mainloop_until_idle ();
+
   /* The channel dockable is the only dockable, it has enough space
    * for the icon-blurb
    */
@@ -865,6 +867,10 @@ gimp_ui_switch_window_mode (Gimp *gimp)
   gimp_ui_manager_activate_action (gimp_test_utils_get_ui_manager (gimp),
                                    "windows",
                                    "windows-use-single-window-mode");
+  gimp_test_run_mainloop_until_idle ();
+
+  /* Add a small sleep to let things stabilize */
+  g_usleep (500 * 1000);
   gimp_test_run_mainloop_until_idle ();
 }
 

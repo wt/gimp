@@ -149,9 +149,9 @@ static const GimpEnumActionEntry file_save_actions[] =
     GIMP_HELP_FILE_EXPORT_TO },
 
   { "file-overwrite", NULL,
-    NC_("file-action", "Overwrite"), "",
+    NC_("file-action", "Over_write"), "",
     NC_("file-action", "Export the image back to the imported file in the import format"),
-    GIMP_SAVE_MODE_EXPORT_TO, FALSE,
+    GIMP_SAVE_MODE_OVERWRITE, FALSE,
     GIMP_HELP_FILE_OVERWRITE },
 
   { "file-export", NULL,
@@ -276,15 +276,15 @@ file_actions_update (GimpActionGroup *group,
 #define SET_SENSITIVE(action,condition) \
         gimp_action_group_set_action_sensitive (group, action, (condition) != 0)
 
-  SET_SENSITIVE ("file-save",            image && drawable);
-  SET_SENSITIVE ("file-save-as",         image && drawable);
-  SET_SENSITIVE ("file-save-a-copy",     image && drawable);
+  SET_SENSITIVE ("file-save",            drawable);
+  SET_SENSITIVE ("file-save-as",         drawable);
+  SET_SENSITIVE ("file-save-a-copy",     drawable);
   SET_SENSITIVE ("file-revert",          image && (gimp_image_get_uri (image) || source));
-  SET_SENSITIVE ("file-export-to",       export);
-  SET_VISIBLE   ("file-export-to",       export || ! show_overwrite);
+  SET_SENSITIVE ("file-export-to",       drawable);
+  SET_VISIBLE   ("file-export-to",       ! show_overwrite);
   SET_SENSITIVE ("file-overwrite",       show_overwrite);
   SET_VISIBLE   ("file-overwrite",       show_overwrite);
-  SET_SENSITIVE ("file-export",          image && drawable);
+  SET_SENSITIVE ("file-export",          drawable);
   SET_SENSITIVE ("file-create-template", image);
 
   if (export)
@@ -295,7 +295,7 @@ file_actions_update (GimpActionGroup *group,
     }
   else if (show_overwrite)
     {
-      gchar *label = file_actions_create_label (_("Overwrite %s"), source);
+      gchar *label = file_actions_create_label (_("Over_write %s"), source);
       gimp_action_group_set_action_label (group, "file-overwrite", label);
       g_free (label);
 

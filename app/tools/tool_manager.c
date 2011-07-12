@@ -25,6 +25,8 @@
 
 #include "tools-types.h"
 
+#include "config/gimpcoreconfig.h"
+
 #include "core/gimp.h"
 #include "core/gimpcontainer.h"
 #include "core/gimpcontext.h"
@@ -33,11 +35,9 @@
 #include "core/gimptoolinfo.h"
 #include "core/gimptoolpreset.h"
 
-#include "config/gimpcoreconfig.h"
+#include "paint/gimppaintoptions.h"
 
 #include "display/gimpdisplay.h"
-
-#include "paint/gimppaintoptions.h"
 
 #include "gimptool.h"
 #include "gimptoolcontrol.h"
@@ -52,8 +52,8 @@ struct _GimpToolManager
   GimpPaintOptions *shared_paint_options;
   GSList           *tool_stack;
 
-  GQuark    image_clean_handler_id;
-  GQuark    image_dirty_handler_id;
+  GQuark            image_clean_handler_id;
+  GQuark            image_dirty_handler_id;
 };
 
 
@@ -72,9 +72,11 @@ static void   tool_manager_image_clean_dirty  (GimpImage       *image,
                                                GimpDirtyMask    dirty_mask,
                                                GimpToolManager *tool_manager);
 
-static void   tool_manager_connect_options    (GimpContext     *user_context,
+static void   tool_manager_connect_options    (GimpToolManager *tool_manager,
+                                               GimpContext     *user_context,
                                                GimpToolInfo    *tool_info);
-static void   tool_manager_disconnect_options (GimpContext     *user_context,
+static void   tool_manager_disconnect_options (GimpToolManager *tool_manager,
+                                               GimpContext     *user_context,
                                                GimpToolInfo    *tool_info);
 
 
@@ -610,36 +612,12 @@ tool_manager_tool_changed (GimpContext     *user_context,
   if (tool_manager->active_tool &&
       tool_manager->active_tool->tool_info)
     {
-      GimpToolInfo *old_tool_info = tool_manager->active_tool->tool_info;
-
-      tool_manager_disconnect_options (user_context,
-                                       old_tool_info);
-
-      if (GIMP_IS_PAINT_OPTIONS (old_tool_info->tool_options))
-        {
-          /* Storing is unconditional, because the user may turn on brush sharing mid use */
-          gimp_paint_options_copy_brush_props (GIMP_PAINT_OPTIONS(old_tool_info->tool_options),
-                                               tool_manager->shared_paint_options);
-
-          gimp_paint_options_copy_dynamics_props (GIMP_PAINT_OPTIONS(old_tool_info->tool_options),
-                                                  tool_manager->shared_paint_options);
-        }
-
-      if (GIMP_IS_PAINT_OPTIONS (tool_info->tool_options))
-        {
-          GimpCoreConfig *config = user_context->gimp->config;
-
-          if (config->global_brush)
-            gimp_paint_options_copy_brush_props (tool_manager->shared_paint_options,
-                                                 GIMP_PAINT_OPTIONS (tool_info->tool_options));
-          if (config->global_dynamics)
-            gimp_paint_options_copy_dynamics_props (tool_manager->shared_paint_options,
-                                                    GIMP_PAINT_OPTIONS (tool_info->tool_options));
-        }
+      tool_manager_disconnect_options (tool_manager, user_context,
+                                       tool_manager->active_tool->tool_info);
     }
 
   /*  connect the new tool's context  */
-  tool_manager_connect_options (user_context, tool_info);
+  tool_manager_connect_options (tool_manager, user_context, tool_info);
 
   tool_manager_select_tool (user_context->gimp, new_tool);
 
@@ -663,7 +641,7 @@ tool_manager_preset_changed (GimpContext     *user_context,
     tool_change = TRUE;
 
   if (! tool_change)
-    tool_manager_disconnect_options (user_context, preset_tool);
+    tool_manager_disconnect_options (tool_manager, user_context, preset_tool);
 
   gimp_config_copy (GIMP_CONFIG (preset->tool_options),
                     GIMP_CONFIG (preset_tool->tool_options), 0);
@@ -671,11 +649,30 @@ tool_manager_preset_changed (GimpContext     *user_context,
   if (tool_change)
     gimp_context_set_tool (user_context, preset_tool);
   else
-    tool_manager_connect_options (user_context, preset_tool);
+    tool_manager_connect_options (tool_manager, user_context, preset_tool);
 
   gimp_context_copy_properties (GIMP_CONTEXT (preset->tool_options),
                                 user_context,
                                 gimp_tool_preset_get_prop_mask (preset));
+
+  if (GIMP_IS_PAINT_OPTIONS (preset->tool_options))
+    {
+      GimpCoreConfig  *config = user_context->gimp->config;
+      GimpToolOptions *src    = preset->tool_options;
+      GimpToolOptions *dest   = tool_manager->active_tool->tool_info->tool_options;
+
+      /* if connect_options() did overwrite the brush options and the
+       * preset contains a brush, use the brush options from the
+       * preset
+       */
+      if (config->global_brush && preset->use_brush)
+        gimp_paint_options_copy_brush_props (GIMP_PAINT_OPTIONS (src),
+                                             GIMP_PAINT_OPTIONS (dest));
+
+      if (config->global_dynamics && preset->use_dynamics)
+        gimp_paint_options_copy_dynamics_props (GIMP_PAINT_OPTIONS (src),
+                                                GIMP_PAINT_OPTIONS (dest));
+    }
 }
 
 static void
@@ -698,8 +695,9 @@ tool_manager_image_clean_dirty (GimpImage       *image,
 }
 
 static void
-tool_manager_connect_options (GimpContext  *user_context,
-                              GimpToolInfo *tool_info)
+tool_manager_connect_options (GimpToolManager *tool_manager,
+                              GimpContext     *user_context,
+                              GimpToolInfo    *tool_info)
 {
   if (tool_info->context_props)
     {
@@ -728,15 +726,39 @@ tool_manager_connect_options (GimpContext  *user_context,
                                     tool_info->context_props & ~global_props);
       gimp_context_set_parent (GIMP_CONTEXT (tool_info->tool_options),
                                user_context);
+
+      if (GIMP_IS_PAINT_OPTIONS (tool_info->tool_options))
+        {
+          if (config->global_brush)
+            gimp_paint_options_copy_brush_props (tool_manager->shared_paint_options,
+                                                 GIMP_PAINT_OPTIONS (tool_info->tool_options));
+
+          if (config->global_dynamics)
+            gimp_paint_options_copy_dynamics_props (tool_manager->shared_paint_options,
+                                                    GIMP_PAINT_OPTIONS (tool_info->tool_options));
+        }
     }
 }
 
 static void
-tool_manager_disconnect_options (GimpContext  *user_context,
-                                 GimpToolInfo *tool_info)
+tool_manager_disconnect_options (GimpToolManager *tool_manager,
+                                 GimpContext     *user_context,
+                                 GimpToolInfo    *tool_info)
 {
   if (tool_info->context_props)
     {
+      if (GIMP_IS_PAINT_OPTIONS (tool_info->tool_options))
+        {
+          /* Storing is unconditional, because the user may turn on
+           * brush sharing mid use
+           */
+          gimp_paint_options_copy_brush_props (GIMP_PAINT_OPTIONS (tool_info->tool_options),
+                                               tool_manager->shared_paint_options);
+
+          gimp_paint_options_copy_dynamics_props (GIMP_PAINT_OPTIONS (tool_info->tool_options),
+                                                  tool_manager->shared_paint_options);
+        }
+
       gimp_context_set_parent (GIMP_CONTEXT (tool_info->tool_options), NULL);
     }
 }
