@@ -453,17 +453,17 @@ prefs_resolution_source_callback (GtkWidget *widget,
     }
   else
     {
-      GimpUnitEntryTable *entries = GIMP_UNIT_ENTRY_TABLE (
-                                    g_object_get_data (G_OBJECT (widget),
-                                                      "monitor_resolution_sizeentry"));
+      GimpUnitEntries *entries = GIMP_UNIT_ENTRIES (
+                                 g_object_get_data (G_OBJECT (widget),
+                                                    "monitor_resolution_sizeentry"));
 
-      g_return_if_fail (GIMP_IS_UNIT_ENTRY_TABLE (entries));
+      g_return_if_fail (GIMP_IS_UNIT_ENTRIES (entries));
 
       xres = gimp_unit_entry_get_value_in_unit (
-              gimp_unit_entry_table_get_nth_entry (entries, 0),
+              gimp_unit_entries_get_nth_entry (entries, 0),
               GIMP_UNIT_PIXEL);
       yres = gimp_unit_entry_get_value_in_unit (
-              gimp_unit_entry_table_get_nth_entry (entries, 1),
+              gimp_unit_entries_get_nth_entry (entries, 1),
               GIMP_UNIT_PIXEL);                                         
     }
 
@@ -482,8 +482,8 @@ prefs_resolution_calibrate_callback (GtkWidget *widget,
   GtkWidget *notebook;
   GtkWidget *image;
 
-  dialog = gtk_widget_get_toplevel (gimp_unit_entry_table_get_table (
-                                      GIMP_UNIT_ENTRY_TABLE (unit_entries)));
+  dialog = gtk_widget_get_toplevel (gimp_unit_entries_get_table (
+                                    GIMP_UNIT_ENTRIES (unit_entries)));
 
   notebook = g_object_get_data (G_OBJECT (dialog),   "notebook");
   image    = g_object_get_data (G_OBJECT (notebook), "image");
@@ -1383,7 +1383,7 @@ prefs_dialog_new (Gimp       *gimp,
   GSList            *group;
   GtkWidget         *editor;
   gint               i;
-  GimpUnitEntryTable *unit_entry_table;
+  GimpUnitEntries *unit_entries;
 
   GObject           *object;
   GimpCoreConfig    *core_config;
@@ -2313,7 +2313,7 @@ prefs_dialog_new (Gimp       *gimp,
                            GTK_CONTAINER (vbox), FALSE);
 
   {
-    unit_entry_table = GIMP_UNIT_ENTRY_TABLE (
+    unit_entries = GIMP_UNIT_ENTRIES (
             gimp_prop_coordinates_new2 (object,
                                        "monitor-xresolution",
                                        "monitor-yresolution",
@@ -2322,15 +2322,15 @@ prefs_dialog_new (Gimp       *gimp,
                                        NULL,
                                        1.0, 1.0, /* FIXME: UnitEntry needs 1.0 as "resolution of resolution" , otherwise calculation is not correct */
                                        TRUE));
-    gimp_unit_entry_table_set_mode (unit_entry_table, GIMP_UNIT_ENTRY_MODE_RESOLUTION);
+    gimp_unit_entries_set_mode (unit_entries, GIMP_UNIT_ENTRY_MODE_RESOLUTION);
 
   }
 
   hbox = gtk_hbox_new (FALSE, 0);
 
-  gtk_box_pack_start (GTK_BOX (hbox), unit_entry_table->table, TRUE, TRUE, 24);
-  gtk_widget_show (unit_entry_table->table);
-  gtk_widget_set_sensitive (unit_entry_table->table, ! display_config->monitor_res_from_gdk);
+  gtk_box_pack_start (GTK_BOX (hbox), unit_entries->table, TRUE, TRUE, 24);
+  gtk_widget_show (unit_entries->table);
+  gtk_widget_set_sensitive (unit_entries->table, ! display_config->monitor_res_from_gdk);
 
   group = NULL;
 
@@ -2352,7 +2352,7 @@ prefs_dialog_new (Gimp       *gimp,
   gtk_box_pack_start (GTK_BOX (vbox2), button, FALSE, FALSE, 0);
   gtk_widget_show (button);
 
-  g_object_set_data (G_OBJECT (button), "monitor_resolution_sizeentry", unit_entry_table);
+  g_object_set_data (G_OBJECT (button), "monitor_resolution_sizeentry", unit_entries);
 
   g_signal_connect (button, "toggled",
                     G_CALLBACK (prefs_resolution_source_callback),
@@ -2382,7 +2382,7 @@ prefs_dialog_new (Gimp       *gimp,
                             ! display_config->monitor_res_from_gdk);
 
   g_object_bind_property (button, "active",
-                          unit_entry_table->table,  "sensitive",
+                          unit_entries->table,  "sensitive",
                           G_BINDING_SYNC_CREATE);
   g_object_bind_property (button,           "active",
                           calibrate_button, "sensitive",
@@ -2390,7 +2390,7 @@ prefs_dialog_new (Gimp       *gimp,
 
   g_signal_connect (calibrate_button, "clicked",
                     G_CALLBACK (prefs_resolution_calibrate_callback),
-                    unit_entry_table);
+                    unit_entries);
 
   g_object_unref (size_group);
   size_group = NULL;
