@@ -69,7 +69,8 @@ static void     gimp_rotate_tool_motion        (GimpTransformTool   *tr_tool);
 static void     gimp_rotate_tool_recalc_matrix (GimpTransformTool   *tr_tool);
 static void     rotate_angle_changed           (GtkAdjustment       *adj,
                                                 GimpTransformTool   *tr_tool);
-static void     rotate_center_changed          (GtkWidget           *entry,
+static void     rotate_center_changed          (GObject             *unit_entries,
+                                                GtkWidget           *entry,
                                                 GimpTransformTool   *tr_tool);
 
 
@@ -166,11 +167,11 @@ gimp_rotate_tool_key_press (GimpTool    *tool,
 static void
 gimp_rotate_tool_dialog (GimpTransformTool *tr_tool)
 {
-  GimpRotateTool *rotate = GIMP_ROTATE_TOOL (tr_tool);
-  GtkWidget      *table;
-  GtkWidget      *button;
-  GtkWidget      *scale;
-  GtkObject      *adj;
+  GimpRotateTool  *rotate = GIMP_ROTATE_TOOL (tr_tool);
+  GtkWidget       *table;
+  GtkWidget       *button;
+  GtkWidget       *scale;
+  GimpUnitEntries *entries;
 
   table = gtk_table_new (4, 2, FALSE);
   gtk_container_set_border_width (GTK_CONTAINER (table), 6);
@@ -199,21 +200,14 @@ gimp_rotate_tool_dialog (GimpTransformTool *tr_tool)
                     GTK_EXPAND | GTK_FILL, GTK_SHRINK, 0, 0);
   gtk_widget_show (scale);
 
-  button = gimp_spin_button_new (&adj, 0, -1, 1, 1, 10, 0, 1, 2);
-  gtk_entry_set_width_chars (GTK_ENTRY (button), SB_WIDTH);
-  gimp_table_attach_aligned (GTK_TABLE (table), 0, 2, _("Center _X:"),
-                             0.0, 0.5, button, 1, TRUE);
+  rotate->unit_entries = gimp_unit_entries_new ();
+  entries = GIMP_UNIT_ENTRIES (rotate->unit_entries);
+  gimp_unit_entries_add_entry_defaults (entries, "center_x", _("Center X:"));
+  gimp_unit_entries_add_entry_defaults (entries, "center_y", _("Center Y:"));
+  gimp_table_attach_aligned (GTK_TABLE (table), 0, 3, NULL,
+                             0.0, 0.5, gimp_unit_entries_get_table (entries), 1, TRUE);
 
-  rotate->sizeentry = gimp_size_entry_new (1, GIMP_UNIT_PIXEL, "%a",
-                                           TRUE, TRUE, FALSE, SB_WIDTH,
-                                           GIMP_SIZE_ENTRY_UPDATE_SIZE);
-  gimp_size_entry_add_field (GIMP_SIZE_ENTRY (rotate->sizeentry),
-                             GTK_SPIN_BUTTON (button), NULL);
-  gimp_size_entry_set_pixel_digits (GIMP_SIZE_ENTRY (rotate->sizeentry), 2);
-  gimp_table_attach_aligned (GTK_TABLE (table), 0, 3, _("Center _Y:"),
-                             0.0, 0.5, rotate->sizeentry, 1, TRUE);
-
-  g_signal_connect (rotate->sizeentry, "value-changed",
+  g_signal_connect (entries, "changed",
                     G_CALLBACK (rotate_center_changed),
                     tr_tool);
 }
@@ -226,16 +220,16 @@ gimp_rotate_tool_dialog_update (GimpTransformTool *tr_tool)
   gtk_adjustment_set_value (rotate->angle_adj,
                             gimp_rad_to_deg (tr_tool->trans_info[ANGLE]));
 
-  g_signal_handlers_block_by_func (rotate->sizeentry,
+  g_signal_handlers_block_by_func (rotate->unit_entries,
                                    rotate_center_changed,
                                    tr_tool);
 
-  gimp_size_entry_set_refval (GIMP_SIZE_ENTRY (rotate->sizeentry), 0,
-                              tr_tool->trans_info[CENTER_X]);
-  gimp_size_entry_set_refval (GIMP_SIZE_ENTRY (rotate->sizeentry), 1,
-                              tr_tool->trans_info[CENTER_Y]);
+  gimp_unit_entries_set_pixels (GIMP_UNIT_ENTRIES (rotate->unit_entries), "center_x",
+                                tr_tool->trans_info[CENTER_X]);
+  gimp_unit_entries_set_pixels (GIMP_UNIT_ENTRIES (rotate->unit_entries), "center_y",
+                                tr_tool->trans_info[CENTER_Y]);
 
-  g_signal_handlers_unblock_by_func (rotate->sizeentry,
+  g_signal_handlers_unblock_by_func (rotate->unit_entries,
                                      rotate_center_changed,
                                      tr_tool);
 }
@@ -243,11 +237,12 @@ gimp_rotate_tool_dialog_update (GimpTransformTool *tr_tool)
 static void
 gimp_rotate_tool_prepare (GimpTransformTool *tr_tool)
 {
-  GimpRotateTool *rotate  = GIMP_ROTATE_TOOL (tr_tool);
-  GimpDisplay    *display = GIMP_TOOL (tr_tool)->display;
-  GimpImage      *image   = gimp_display_get_image (display);
-  gdouble         xres;
-  gdouble         yres;
+  GimpRotateTool  *rotate  = GIMP_ROTATE_TOOL (tr_tool);
+  GimpDisplay     *display = GIMP_TOOL (tr_tool)->display;
+  GimpImage       *image   = gimp_display_get_image (display);
+  gdouble          xres;
+  gdouble          yres;
+  GimpUnitEntries *entries = GIMP_UNIT_ENTRIES (rotate->unit_entries);
 
   tr_tool->trans_info[ANGLE]      = 0.0;
   tr_tool->trans_info[REAL_ANGLE] = 0.0;
@@ -256,33 +251,30 @@ gimp_rotate_tool_prepare (GimpTransformTool *tr_tool)
 
   gimp_image_get_resolution (image, &xres, &yres);
 
-  g_signal_handlers_block_by_func (rotate->sizeentry,
+  g_signal_handlers_block_by_func (entries,
                                    rotate_center_changed,
                                    tr_tool);
 
-  gimp_size_entry_set_unit (GIMP_SIZE_ENTRY (rotate->sizeentry),
-                            gimp_display_get_shell (display)->unit);
+  gimp_unit_entries_set_unit (entries, gimp_display_get_shell (display)->unit);
 
-  gimp_size_entry_set_resolution (GIMP_SIZE_ENTRY (rotate->sizeentry), 0,
-                                  xres, FALSE);
-  gimp_size_entry_set_resolution (GIMP_SIZE_ENTRY (rotate->sizeentry), 1,
-                                  yres, FALSE);
+  gimp_unit_entry_set_resolution (gimp_unit_entries_get_entry (entries, "center_x"), xres);
+  gimp_unit_entry_set_resolution (gimp_unit_entries_get_entry (entries, "center_y"), yres);
 
-  gimp_size_entry_set_refval_boundaries (GIMP_SIZE_ENTRY (rotate->sizeentry), 0,
-                                         -65536,
-                                         65536 +
-                                         gimp_image_get_width (image));
-  gimp_size_entry_set_refval_boundaries (GIMP_SIZE_ENTRY (rotate->sizeentry), 1,
-                                         -65536,
-                                         65536 +
-                                         gimp_image_get_height (image));
+  gimp_unit_entry_set_bounds (gimp_unit_entries_get_entry (entries, "center_x"),
+                              GIMP_UNIT_PIXEL,
+                              65536 + gimp_image_get_width (image),
+                              -65536);
+  gimp_unit_entry_set_bounds (gimp_unit_entries_get_entry (entries, "center_x"),
+                              GIMP_UNIT_PIXEL,
+                              65536 + gimp_image_get_height (image),
+                              -65536);
 
-  gimp_size_entry_set_size (GIMP_SIZE_ENTRY (rotate->sizeentry), 0,
+  /*gimp_size_entry_set_size (GIMP_SIZE_ENTRY (rotate->sizeentry), 0,
                             tr_tool->x1, tr_tool->x2);
   gimp_size_entry_set_size (GIMP_SIZE_ENTRY (rotate->sizeentry), 1,
-                            tr_tool->y1, tr_tool->y2);
+                            tr_tool->y1, tr_tool->y2);*/
 
-  g_signal_handlers_unblock_by_func (rotate->sizeentry,
+  g_signal_handlers_unblock_by_func (rotate->unit_entries,
                                      rotate_center_changed,
                                      tr_tool);
 }
@@ -386,11 +378,12 @@ rotate_angle_changed (GtkAdjustment     *adj,
 }
 
 static void
-rotate_center_changed (GtkWidget         *widget,
+rotate_center_changed (GObject           *entries,
+                       GtkWidget         *widget,
                        GimpTransformTool *tr_tool)
 {
-  gdouble cx = gimp_size_entry_get_refval (GIMP_SIZE_ENTRY (widget), 0);
-  gdouble cy = gimp_size_entry_get_refval (GIMP_SIZE_ENTRY (widget), 1);
+  gdouble cx = gimp_unit_entries_get_pixels (GIMP_UNIT_ENTRIES (entries), "center_x");
+  gdouble cy = gimp_unit_entries_get_pixels (GIMP_UNIT_ENTRIES (entries), "center_y");
 
   if ((cx != tr_tool->trans_info[CENTER_X]) ||
       (cy != tr_tool->trans_info[CENTER_Y]))
