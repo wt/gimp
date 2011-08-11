@@ -2314,10 +2314,9 @@ prefs_dialog_new (Gimp       *gimp,
                                        _("Horizontal"),
                                        _("Vertical"),
                                        NULL,  /* unit_property_name */
-                                       -1.0, -1.0, 
+                                       1.0, 1.0, 
                                        TRUE));
     gimp_unit_entries_set_mode (unit_entries, GIMP_UNIT_ENTRY_MODE_RESOLUTION);
-
   }
 
   hbox = gtk_hbox_new (FALSE, 0);
