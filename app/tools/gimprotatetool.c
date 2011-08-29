@@ -59,19 +59,22 @@ enum
 
 /*  local function prototypes  */
 
-static gboolean gimp_rotate_tool_key_press     (GimpTool            *tool,
-                                                GdkEventKey         *kevent,
-                                                GimpDisplay         *display);
-static void     gimp_rotate_tool_dialog        (GimpTransformTool   *tr_tool);
-static void     gimp_rotate_tool_dialog_update (GimpTransformTool   *tr_tool);
-static void     gimp_rotate_tool_prepare       (GimpTransformTool   *tr_tool);
-static void     gimp_rotate_tool_motion        (GimpTransformTool   *tr_tool);
-static void     gimp_rotate_tool_recalc_matrix (GimpTransformTool   *tr_tool);
-static void     rotate_angle_changed           (GtkAdjustment       *adj,
-                                                GimpTransformTool   *tr_tool);
-static void     rotate_center_changed          (GObject             *unit_entries,
-                                                GtkWidget           *entry,
-                                                GimpTransformTool   *tr_tool);
+static gboolean  gimp_rotate_tool_key_press     (GimpTool           *tool,
+                                                 GdkEventKey        *kevent,
+                                                 GimpDisplay        *display);
+
+static void      gimp_rotate_tool_dialog        (GimpTransformTool  *tr_tool);
+static void      gimp_rotate_tool_dialog_update (GimpTransformTool  *tr_tool);
+static void      gimp_rotate_tool_prepare       (GimpTransformTool  *tr_tool);
+static void      gimp_rotate_tool_motion        (GimpTransformTool  *tr_tool);
+static void      gimp_rotate_tool_recalc_matrix (GimpTransformTool  *tr_tool);
+static gchar   * gimp_rotate_tool_get_undo_desc (GimpTransformTool  *tr_tool);
+
+static void      rotate_angle_changed           (GtkAdjustment      *adj,
+                                                 GimpTransformTool  *tr_tool);
+static void      rotate_center_changed          (GObject             *unit_entries,
+                                                 GtkWidget           *entry,
+                                                 GimpTransformTool   *tr_tool);
 
 
 G_DEFINE_TYPE (GimpRotateTool, gimp_rotate_tool, GIMP_TYPE_TRANSFORM_TOOL)
@@ -109,6 +112,7 @@ gimp_rotate_tool_class_init (GimpRotateToolClass *klass)
   trans_class->prepare       = gimp_rotate_tool_prepare;
   trans_class->motion        = gimp_rotate_tool_motion;
   trans_class->recalc_matrix = gimp_rotate_tool_recalc_matrix;
+  trans_class->get_undo_desc = gimp_rotate_tool_get_undo_desc;
 }
 
 static void
@@ -119,7 +123,6 @@ gimp_rotate_tool_init (GimpRotateTool *rotate_tool)
 
   gimp_tool_control_set_tool_cursor (tool->control, GIMP_TOOL_CURSOR_ROTATE);
 
-  tr_tool->undo_desc     = C_("command", "Rotate");
   tr_tool->progress_text = _("Rotating");
 
   tr_tool->use_grid      = TRUE;
@@ -352,6 +355,16 @@ gimp_rotate_tool_recalc_matrix (GimpTransformTool *tr_tool)
                                        tr_tool->cx,
                                        tr_tool->cy,
                                        tr_tool->trans_info[ANGLE]);
+}
+
+static gchar *
+gimp_rotate_tool_get_undo_desc (GimpTransformTool  *tr_tool)
+{
+  return g_strdup_printf (C_("undo-type",
+                             "Rotate by %-3.3g° around (%g, %g)"),
+                          gimp_rad_to_deg (tr_tool->trans_info[ANGLE]),
+                          tr_tool->trans_info[CENTER_X],
+                          tr_tool->trans_info[CENTER_Y]);
 }
 
 static void
