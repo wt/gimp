@@ -86,11 +86,10 @@
 #define DEBUG FALSE
 
 /* 1: Normal debuggin, 2: Deep debuggin */
-#define DEBUG_LEVEL 1
+#define DEBUG_LEVEL 2
 
 #define IFDBG if (DEBUG)
 #define IF_DEEP_DBG if (DEBUG && DEBUG_LEVEL == 2)
-
 
 #define PSD_UNIT_INCH 1
 #define PSD_UNIT_CM   2
@@ -101,7 +100,6 @@
 /* Local types etc
  */
 
-
 typedef struct PsdLayerDimension
 {
   gint   left;
@@ -109,7 +107,6 @@ typedef struct PsdLayerDimension
   gint32 width;
   gint32 height;
 } PSD_Layer_Dimension;
-
 
 typedef struct PsdImageData
 {
@@ -134,63 +131,78 @@ typedef struct PsdImageData
 
 static PSD_Image_Data PSDImageData;
 
-
 /* Declare some local functions.
  */
 
 static void   query                (void);
-static void   run                  (const gchar      *name,
-                                    gint              nparams,
-                                    const GimpParam  *param,
-                                    gint             *nreturn_vals,
-                                    GimpParam       **return_vals);
 
-static void   psd_lmode_layer      (gint32         idLayer,
-                                    gchar         *psdMode);
-static void   reshuffle_cmap_write (guchar        *mapGimp);
-static void   save_header          (FILE          *fd,
-                                    gint32         image_id);
-static void   save_color_mode_data (FILE          *fd,
-                                    gint32         image_id);
-static void   save_resources       (FILE          *fd,
-                                    gint32         image_id);
-static void   save_layer_and_mask  (FILE          *fd,
-                                    gint32         image_id);
-static void   save_data            (FILE          *fd,
-                                    gint32         image_id);
-static gint   save_image           (const gchar   *filename,
-                                    gint32         image_id,
-                                    GError       **error);
-static void   xfwrite              (FILE          *fd,
-                                    gconstpointer  buf,
-                                    glong          len,
-                                    const gchar   *why);
-static void   write_pascalstring   (FILE          *fd,
-                                    const gchar   *val,
-                                    gint           padding,
-                                    const gchar   *why);
-static void   write_string         (FILE          *fd,
-                                    const gchar   *val,
-                                    const gchar   *why);
-static void   write_gchar          (FILE          *fd,
-                                    guchar         val,
-                                    const gchar   *why);
-static void   write_gint16         (FILE          *fd,
-                                    gint16         val,
-                                    const gchar   *why);
-static void   write_gint32         (FILE          *fd,
-                                    gint32         val,
-                                    const gchar   *why);
-static void   write_datablock_luni (FILE          *fd,
-                                    const gchar   *val,
-                                    const gchar   *why);
+static void   run                  (const gchar         *name,
+                                    gint                 nparams,
+                                    const GimpParam     *param,
+                                    gint                *nreturn_vals,
+                                    GimpParam           **return_vals);
 
-static void   write_pixel_data     (FILE          *fd,
-                                    gint32         drawableID,
-                                    glong         *ChanLenPosition,
-                                    gint32         rowlenOffset);
+static void   psd_lmode_layer      (gint32               idLayer,
+                                    gchar               *psdMode);
 
-static gint32 create_merged_image  (gint32         imageID);
+static void   reshuffle_cmap_write (guchar              *mapGimp);
+
+static void   save_header          (FILE                *fd,
+                                    gint32               image_id);
+
+static void   save_color_mode_data (FILE                *fd,
+                                    gint32               image_id);
+
+static void   save_resources       (FILE                *fd,
+                                    gint32               image_id);
+
+static void   save_layer_and_mask  (FILE                *fd,
+                                    gint32               image_id);
+
+static void   save_data            (FILE                *fd,
+                                    gint32               image_id);
+
+static gint   save_image           (const gchar         *filename,
+                                    gint32               image_id,
+                                    GError             **error);
+
+static void   xfwrite              (FILE                *fd,
+                                    gconstpointer        buf,
+                                    glong                len,
+                                    const gchar         *why);
+
+static void   write_pascalstring   (FILE               *fd,
+                                    const gchar        *val,
+                                    gint                padding,
+                                    const gchar        *why);
+
+static void   write_string         (FILE               *fd,
+                                    const gchar        *val,
+                                    const gchar        *why);
+
+static void   write_gchar          (FILE               *fd,
+                                    guchar              val,
+                                    const gchar        *why);
+
+static void   write_gint16         (FILE               *fd,
+                                    gint16              val,
+                                    const gchar        *why);
+
+static void   write_gint32         (FILE               *fd,
+                                    gint32              val,
+                                    const gchar        *why);
+
+static void   write_datablock_luni (FILE               *fd,
+                                    const gchar        *val,
+                                    const gchar        *why);
+
+
+static void   write_pixel_data     (FILE               *fd,
+                                    gint32              drawableID,
+                                    glong              *ChanLenPosition,
+                                    gint32              rowlenOffset);
+
+static gint32 create_merged_image  (gint32              imageID);
 
 
 const GimpPlugInInfo PLUG_IN_INFO =
@@ -234,7 +246,6 @@ query (void)
   gimp_register_file_handler_mime (SAVE_PROC, "image/x-psd");
   gimp_register_save_handler (SAVE_PROC, "psd", "");
 }
-
 
 static void
 run (const gchar      *name,
@@ -384,7 +395,6 @@ psd_lmode_layer (gint32  idLayer,
     }
 }
 
-
 static void
 write_string (FILE        *fd,
               const gchar *val,
@@ -393,7 +403,6 @@ write_string (FILE        *fd,
   write_gchar (fd, strlen (val), why);
   xfwrite (fd, val, strlen (val), why);
 }
-
 
 static void
 write_pascalstring (FILE        *fd,
@@ -432,7 +441,6 @@ write_pascalstring (FILE        *fd,
     write_gchar (fd, 0, why);
 }
 
-
 static void
 xfwrite (FILE          *fd,
          gconstpointer  buf,
@@ -448,7 +456,6 @@ xfwrite (FILE          *fd,
       gimp_quit ();
     }
 }
-
 
 static void
 write_gchar (FILE        *fd,
@@ -470,7 +477,6 @@ write_gchar (FILE        *fd,
   fseek (fd, pos + 1, SEEK_SET);
 }
 
-
 static void
 write_gint16 (FILE        *fd,
               gint16       val,
@@ -490,9 +496,6 @@ write_gint16 (FILE        *fd,
     }
 }
 
-
-
-
 static void
 write_gint32 (FILE        *fd,
               gint32       val,
@@ -511,7 +514,6 @@ write_gint32 (FILE        *fd,
       gimp_quit ();
     }
 }
-
 
 static void
 write_datablock_luni (FILE        *fd,
@@ -553,7 +555,6 @@ write_datablock_luni (FILE        *fd,
         }
     }
 }
-
 
 static gint32
 pack_pb_line (guchar *start,
@@ -639,7 +640,6 @@ gimpBaseTypeToPsdMode (GimpImageBaseType gimpBaseType)
     }
 }
 
-
 static gint
 nChansLayer (gint gimpBaseType,
              gint hasAlpha,
@@ -664,7 +664,6 @@ nChansLayer (gint gimpBaseType,
     }
 }
 
-
 static void
 reshuffle_cmap_write (guchar *mapGimp)
 {
@@ -687,7 +686,6 @@ reshuffle_cmap_write (guchar *mapGimp)
 
   g_free (mapPSD);
 }
-
 
 static void
 save_header (FILE   *fd,
@@ -713,8 +711,6 @@ save_header (FILE   *fd,
                                      PSD images.  */
   write_gint16 (fd, gimpBaseTypeToPsdMode (PSDImageData.baseType), "mode");
 }
-
-
 
 static void
 save_color_mode_data (FILE   *fd,
@@ -772,8 +768,6 @@ save_color_mode_data (FILE   *fd,
       write_gint32 (fd, 0, "color data length");
     }
 }
-
-
 
 static void
 save_resources (FILE   *fd,
@@ -1004,8 +998,6 @@ save_resources (FILE   *fd,
   fseek (fd, eof_pos, SEEK_SET);
 }
 
-
-
 static int
 get_compress_channel_data (guchar  *channel_data,
                            gint32   channel_cols,
@@ -1034,7 +1026,6 @@ get_compress_channel_data (guchar  *channel_data,
   /*  return((len + channel_rows * sizeof (gint16)) + sizeof (gint16));*/
   return len;
 }
-
 
 static void
 save_layer_and_mask (FILE   *fd,
@@ -1257,8 +1248,6 @@ save_layer_and_mask (FILE   *fd,
   fseek (fd, eof_pos, SEEK_SET);
 }
 
-
-
 static void
 write_pixel_data (FILE   *fd,
                   gint32  drawableID,
@@ -1457,8 +1446,6 @@ write_pixel_data (FILE   *fd,
   g_free (LengthsTable);
 }
 
-
-
 static void
 save_data (FILE   *fd,
            gint32  image_id)
@@ -1600,8 +1587,6 @@ get_image_data (FILE   *fd,
 
   PSDImageData.layersDim = g_new (PSD_Layer_Dimension, PSDImageData.nLayers);
 }
-
-
 
 static gint
 save_image (const gchar  *filename,
