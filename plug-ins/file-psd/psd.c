@@ -177,6 +177,7 @@ run (const gchar      *name,
 #endif /* PSD_SAVE */
 
   INIT_I18N ();
+  gegl_init (NULL, NULL);
 
   *nreturn_vals = 1;
   *return_vals  = values;
