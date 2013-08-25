@@ -134,6 +134,8 @@ gimp_display_shell_render (GimpDisplayShell *shell,
 
   if (shell->mask)
     {
+      gint mask_height;
+
       if (! shell->mask_surface)
         {
           shell->mask_surface =
@@ -146,13 +148,11 @@ gimp_display_shell_render (GimpDisplayShell *shell,
 
       cairo_surface_mark_dirty (shell->mask_surface);
 
-      buffer = gimp_drawable_get_buffer (shell->mask);
-
       stride = cairo_image_surface_get_stride (shell->mask_surface);
       data = cairo_image_surface_get_data (shell->mask_surface);
       data += mask_src_y * stride + mask_src_x * 4;
 
-      gegl_buffer_get (buffer,
+      gegl_buffer_get (shell->mask,
                        GEGL_RECTANGLE ((x + viewport_offset_x) * window_scale,
                                        (y + viewport_offset_y) * window_scale,
                                        w * window_scale,
@@ -161,6 +161,23 @@ gimp_display_shell_render (GimpDisplayShell *shell,
                        babl_format ("Y u8"),
                        data, stride,
                        GEGL_ABYSS_NONE);
+
+      /* invert the mask so what is *not* the foreground object is masked */
+      mask_height = h * window_scale;
+      while (mask_height--)
+        {
+          gint    mask_width = w * window_scale;
+          guchar *d          = data;
+
+          while (mask_width--)
+            {
+              guchar inv = 255 - *d;
+
+              *d++ = inv;
+            }
+
+          data += stride;
+        }
     }
 
   /*  put it to the screen  */

@@ -482,7 +482,8 @@ gimp_tool_gui_set_default_response (GimpToolGui *gui,
 
   if (private->overlay)
     {
-      /* TODO */
+      gimp_overlay_dialog_set_default_response (GIMP_OVERLAY_DIALOG (private->dialog),
+                                                response_id);
     }
   else
     {
@@ -511,7 +512,8 @@ gimp_tool_gui_set_response_sensitive (GimpToolGui *gui,
 
   if (private->overlay)
     {
-      /* TODO */
+      gimp_overlay_dialog_set_response_sensitive (GIMP_OVERLAY_DIALOG (private->dialog),
+                                                  response_id, sensitive);
     }
   else
     {
@@ -575,21 +577,15 @@ gimp_tool_gui_create_dialog (GimpToolGui *gui)
                                           entry->stock_id,
                                           entry->response_id);
 
-          /* FIXME */
-#if 0
           if (! entry->sensitive)
             gimp_overlay_dialog_set_response_sensitive (GIMP_OVERLAY_DIALOG (private->dialog),
                                                         entry->response_id,
                                                         FALSE);
-#endif
         }
 
-      /* FIXME */
-#if 0
       if (private->default_response != -1)
         gimp_overlay_dialog_set_default_response (GIMP_OVERLAY_DIALOG (private->dialog),
                                                   private->default_response);
-#endif
 
       gtk_container_set_border_width (GTK_CONTAINER (private->dialog), 6);
 
@@ -650,6 +646,7 @@ gimp_tool_gui_update_buttons (GimpToolGui *gui)
   GList              *list;
   gint               *ids;
   gint                n_ids;
+  gint                n_alternatives = 0;
   gint                i;
 
   n_ids = g_list_length (private->response_entries);
@@ -665,17 +662,22 @@ gimp_tool_gui_update_buttons (GimpToolGui *gui)
           entry->alternative_position < n_ids)
         {
           ids[entry->alternative_position] = entry->response_id;
+          n_alternatives++;
         }
     }
 
-  if (private->overlay)
+  if (n_ids == n_alternatives)
     {
-      /* TODO */
-    }
-  else
-    {
-      gtk_dialog_set_alternative_button_order_from_array (GTK_DIALOG (private->dialog),
-                                                          n_ids, ids);
+      if (private->overlay)
+        {
+          gimp_overlay_dialog_set_alternative_button_order (GIMP_OVERLAY_DIALOG (private->dialog),
+                                                            n_ids, ids);
+        }
+      else
+        {
+          gtk_dialog_set_alternative_button_order_from_array (GTK_DIALOG (private->dialog),
+                                                              n_ids, ids);
+        }
     }
 
   g_free (ids);

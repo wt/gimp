@@ -334,22 +334,26 @@ file_open_thumbnail (Gimp           *gimp,
                   switch (value)
                     {
                     case GIMP_RGB_IMAGE:
-                      *format = gimp_babl_format (GIMP_RGB, GIMP_PRECISION_U8,
+                      *format = gimp_babl_format (GIMP_RGB,
+                                                  GIMP_PRECISION_U8_GAMMA,
                                                   FALSE);
                       break;
 
                     case GIMP_RGBA_IMAGE:
-                      *format = gimp_babl_format (GIMP_RGB, GIMP_PRECISION_U8,
+                      *format = gimp_babl_format (GIMP_RGB,
+                                                  GIMP_PRECISION_U8_GAMMA,
                                                   TRUE);
                       break;
 
                     case GIMP_GRAY_IMAGE:
-                      *format = gimp_babl_format (GIMP_GRAY, GIMP_PRECISION_U8,
+                      *format = gimp_babl_format (GIMP_GRAY,
+                                                  GIMP_PRECISION_U8_GAMMA,
                                                   FALSE);
                       break;
 
                     case GIMP_GRAYA_IMAGE:
-                      *format = gimp_babl_format (GIMP_GRAY, GIMP_PRECISION_U8,
+                      *format = gimp_babl_format (GIMP_GRAY,
+                                                  GIMP_PRECISION_U8_GAMMA,
                                                   TRUE);
                       break;
 
@@ -610,6 +614,9 @@ file_open_from_command_line (Gimp        *gimp,
       GimpObject        *display = gimp_get_empty_display (gimp);
       GimpPDBStatusType  status;
 
+      if (display)
+        g_object_add_weak_pointer (G_OBJECT (display), (gpointer) &display);
+
       image = file_open_with_display (gimp,
                                       gimp_get_user_context (gimp),
                                       GIMP_PROGRESS (display),
@@ -623,7 +630,7 @@ file_open_from_command_line (Gimp        *gimp,
           g_object_set_data_full (G_OBJECT (gimp), GIMP_FILE_OPEN_LAST_URI_KEY,
                                   uri, (GDestroyNotify) g_free);
         }
-      else if (status != GIMP_PDB_CANCEL)
+      else if (status != GIMP_PDB_CANCEL && display)
         {
           gchar *filename = file_utils_uri_display_name (uri);
 
@@ -635,6 +642,9 @@ file_open_from_command_line (Gimp        *gimp,
           g_free (filename);
           g_free (uri);
         }
+
+      if (display)
+        g_object_remove_weak_pointer (G_OBJECT (display), (gpointer) &display);
     }
   else
     {

@@ -328,11 +328,16 @@
         <separator />
       </menu>
       <menu action="image-precision-menu" name="Precision">
-        <menuitem action="image-convert-u8" />
-        <menuitem action="image-convert-u16" />
-        <menuitem action="image-convert-u32" />
-        <menuitem action="image-convert-half" />
-        <menuitem action="image-convert-float" />
+        <menuitem action="image-convert-u8-linear" />
+        <menuitem action="image-convert-u8-gamma" />
+        <menuitem action="image-convert-u16-linear" />
+        <menuitem action="image-convert-u16-gamma" />
+        <menuitem action="image-convert-u32-linear" />
+        <menuitem action="image-convert-u32-gamma" />
+        <menuitem action="image-convert-half-linear" />
+        <menuitem action="image-convert-half-gamma" />
+        <menuitem action="image-convert-float-linear" />
+        <menuitem action="image-convert-float-gamma" />
         <separator />
       </menu>
       <menu action="image-transform-menu" name="Transform">
@@ -526,7 +531,9 @@
         <menuitem action="drawable-equalize" />
         <menuitem action="drawable-levels-stretch" />
       </menu>
-      <menu action="colors-components-menu" name="Components" />
+      <menu action="colors-components-menu" name="Components">
+	<menuitem action="filters-channel-mixer" />
+      </menu>
       <menu action="colors-desaturate-menu" name="Desaturate">
 	<menuitem action="filters-mono-mixer" />
 	<menuitem action="filters-c2g" />
@@ -535,6 +542,7 @@
       <menu action="colors-map-menu" name="Map">
         <placeholder name="Colormap" />
         <separator />
+	<menuitem action="filters-alien-map" />
       </menu>
       <menu action="colors-info-menu" name="Info">
         <menuitem action="dialogs-histogram" />
@@ -631,6 +639,7 @@
 	</placeholder>
       </menu>
       <menu action="plug-in-enhance-menu" name="Enhance">
+        <menuitem action="filters-antialias" />
         <menuitem action="filters-deinterlace" />
         <menuitem action="filters-red-eye-removal" />
         <menuitem action="filters-unsharp-mask" />
@@ -679,6 +688,7 @@
       <menu action="plug-in-decor-menu" name="Decor" />
       <menu action="plug-in-map-menu" name="Map">
         <menuitem action="filters-fractal-trace" />
+        <menuitem action="filters-tile-seamless" />
       </menu>
       <menu action="plug-in-render-menu" name="Render">
         <menu action="plug-in-render-clouds-menu" name="Clouds" />

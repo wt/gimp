@@ -26,6 +26,8 @@
 
 #include "config/gimpcoreconfig.h"
 
+#include "gegl/gimp-babl.h"
+
 #include "core/core-enums.h"
 #include "core/gimp.h"
 #include "core/gimpchannel.h"
@@ -246,7 +248,8 @@ image_convert_precision_cmd_callback (GtkAction *action,
   if (value == gimp_image_get_precision (image))
     return;
 
-  if (value < gimp_image_get_precision (image))
+  if ((value < gimp_image_get_precision (image)) ||
+      (gimp_babl_component_type (value) == gimp_image_get_component_type (image)))
     {
       GtkWidget *dialog;
 
@@ -583,9 +586,20 @@ image_flatten_image_cmd_callback (GtkAction *action,
                                   gpointer   data)
 {
   GimpImage *image;
+  GtkWidget *widget;
+  GError    *error = NULL;
   return_if_no_image (image, data);
+  return_if_no_widget (widget, data);
 
-  gimp_image_flatten (image, action_data_get_context (data));
+  if (! gimp_image_flatten (image, action_data_get_context (data), &error))
+    {
+      gimp_message_literal (image->gimp,
+                            G_OBJECT (widget), GIMP_MESSAGE_WARNING,
+                            error->message);
+      g_clear_error (&error);
+      return;
+    }
+
   gimp_image_flush (image);
 }
 

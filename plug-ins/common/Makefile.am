@@ -44,21 +44,17 @@ AM_CPPFLAGS = \
 	-I$(includedir)
 
 libexec_PROGRAMS = \
-	alien-map \
 	align-layers \
 	animation-optimize \
 	animation-play \
-	antialias \
 	apply-canvas \
 	blinds \
 	blur \
 	blur-gauss \
 	blur-gauss-selective \
-	blur-motion \
 	border-average \
 	bump-map \
 	cartoon \
-	channel-mixer \
 	checkerboard \
 	cml-explorer \
 	color-cube-analyze \
@@ -166,7 +162,6 @@ libexec_PROGRAMS = \
 	tile \
 	tile-glass \
 	tile-paper \
-	tile-seamless \
 	tile-small \
 	unit-editor \
 	unsharp-mask \
@@ -209,23 +204,6 @@ install-%: %
 	  echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) --mode=install $(INSTALL_PROGRAM) $$p $(DESTDIR)$(libexecdir)/$$f"; \
 	  $(INSTALL_PROGRAM_ENV) $(LIBTOOL) --mode=install $(INSTALL_PROGRAM) $$p $(DESTDIR)$(libexecdir)/$$f || exit 1; \
 	else :; fi
-
-alien_map_SOURCES = \
-	alien-map.c
-
-alien_map_LDADD = \
-	$(libgimpui)		\
-	$(libgimpwidgets)	\
-	$(libgimpmodule)	\
-	$(libgimp)		\
-	$(libgimpmath)		\
-	$(libgimpconfig)	\
-	$(libgimpcolor)		\
-	$(libgimpbase)		\
-	$(GTK_LIBS)		\
-	$(RT_LIBS)		\
-	$(INTLLIBS)		\
-	$(alien_map_RC)
 
 align_layers_SOURCES = \
 	align-layers.c
@@ -276,21 +254,6 @@ animation_play_LDADD = \
 	$(RT_LIBS)		\
 	$(INTLLIBS)		\
 	$(animation_play_RC)
-
-antialias_SOURCES = \
-	antialias.c
-
-antialias_LDADD = \
-	$(libgimp)		\
-	$(libgimpmath)		\
-	$(libgimpconfig)	\
-	$(libgimpcolor)		\
-	$(libgimpbase)		\
-	$(CAIRO_LIBS)		\
-	$(GDK_PIXBUF_LIBS)	\
-	$(RT_LIBS)		\
-	$(INTLLIBS)		\
-	$(antialias_RC)
 
 apply_canvas_SOURCES = \
 	apply-canvas.c
@@ -377,23 +340,6 @@ blur_gauss_selective_LDADD = \
 	$(INTLLIBS)		\
 	$(blur_gauss_selective_RC)
 
-blur_motion_SOURCES = \
-	blur-motion.c
-
-blur_motion_LDADD = \
-	$(libgimpui)		\
-	$(libgimpwidgets)	\
-	$(libgimpmodule)	\
-	$(libgimp)		\
-	$(libgimpmath)		\
-	$(libgimpconfig)	\
-	$(libgimpcolor)		\
-	$(libgimpbase)		\
-	$(GTK_LIBS)		\
-	$(RT_LIBS)		\
-	$(INTLLIBS)		\
-	$(blur_motion_RC)
-
 border_average_SOURCES = \
 	border-average.c
 
@@ -407,6 +353,7 @@ border_average_LDADD = \
 	$(libgimpcolor)		\
 	$(libgimpbase)		\
 	$(GTK_LIBS)		\
+	$(GEGL_LIBS)		\
 	$(RT_LIBS)		\
 	$(INTLLIBS)		\
 	$(border_average_RC)
@@ -444,23 +391,6 @@ cartoon_LDADD = \
 	$(RT_LIBS)		\
 	$(INTLLIBS)		\
 	$(cartoon_RC)
-
-channel_mixer_SOURCES = \
-	channel-mixer.c
-
-channel_mixer_LDADD = \
-	$(libgimpui)		\
-	$(libgimpwidgets)	\
-	$(libgimpmodule)	\
-	$(libgimp)		\
-	$(libgimpmath)		\
-	$(libgimpconfig)	\
-	$(libgimpcolor)		\
-	$(libgimpbase)		\
-	$(GTK_LIBS)		\
-	$(RT_LIBS)		\
-	$(INTLLIBS)		\
-	$(channel_mixer_RC)
 
 checkerboard_SOURCES = \
 	checkerboard.c
@@ -594,6 +524,7 @@ compose_LDADD = \
 	$(libgimpcolor)		\
 	$(libgimpbase)		\
 	$(GTK_LIBS)		\
+	$(GEGL_LIBS)		\
 	$(RT_LIBS)		\
 	$(INTLLIBS)		\
 	$(compose_RC)
@@ -1665,6 +1596,7 @@ gradient_map_LDADD = \
 	$(libgimpbase)		\
 	$(CAIRO_LIBS)		\
 	$(GDK_PIXBUF_LIBS)	\
+	$(GEGL_LIBS)		\
 	$(RT_LIBS)		\
 	$(INTLLIBS)		\
 	$(gradient_map_RC)
@@ -2318,21 +2250,6 @@ tile_paper_LDADD = \
 	$(RT_LIBS)		\
 	$(INTLLIBS)		\
 	$(tile_paper_RC)
-
-tile_seamless_SOURCES = \
-	tile-seamless.c
-
-tile_seamless_LDADD = \
-	$(libgimp)		\
-	$(libgimpmath)		\
-	$(libgimpconfig)	\
-	$(libgimpcolor)		\
-	$(libgimpbase)		\
-	$(CAIRO_LIBS)		\
-	$(GDK_PIXBUF_LIBS)	\
-	$(RT_LIBS)		\
-	$(INTLLIBS)		\
-	$(tile_seamless_RC)
 
 tile_small_SOURCES = \
 	tile-small.c

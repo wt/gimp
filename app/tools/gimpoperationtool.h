@@ -40,10 +40,12 @@ struct _GimpOperationTool
   gchar            *operation;
   gchar            *undo_desc;
   GimpObject       *config;
+  GeglNode         *aux_input;
 
   /* dialog */
   GtkWidget        *options_box;
   GtkWidget        *options_table;
+  GtkWidget        *aux_input_combo;
 };
 
 struct _GimpOperationToolClass

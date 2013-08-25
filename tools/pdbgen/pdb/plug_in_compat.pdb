@@ -16,6 +16,124 @@
 
 # "Perlized" from C source by Manish Singh <yosh@gimp.org>
 
+sub plug_in_alienmap2 {
+    $blurb = 'Alter colors in various psychedelic ways';
+
+    $help = <<'HELP';
+No help yet. Just try it and you'll see!
+HELP
+
+    &std_pdb_compat('gegl:alien-map');
+    $date = '2013';
+
+    @inargs = (
+	{ name => 'run_mode', type => 'enum GimpRunMode', dead => 1,
+	  desc => 'The run mode' },
+	{ name => 'image', type => 'image', dead => 1,
+	  desc => 'Input image (unused)' },
+	{ name => 'drawable', type => 'drawable',
+	  desc => 'Input drawable' },
+	{ name => 'redfrequency', type => '0 <= float <= 20',
+	  desc => 'Red/hue component frequency factor' },
+	{ name => 'redangle', type => '0 <= float <= 360',
+	  desc => 'Red/hue component angle factor (0-360)' },
+	{ name => 'greenfrequency', type => '0 <= float <= 20',
+	  desc => 'Green/saturation component frequency factor' },
+	{ name => 'greenangle', type => '0 <= float <= 360',
+	  desc => 'Green/saturation component angle factor (0-360)' },
+	{ name => 'bluefrequency', type => '0 <= float <= 20',
+	  desc => 'Blue/luminance component frequency factor' },
+	{ name => 'blueangle', type => '0 <= float <= 360',
+	  desc => 'Blue/luminance component angle factor (0-360)' },
+	{ name => 'colormodel', type => '0 <= int8 <= 1',
+	  desc => 'Color model { RGB-MODEL (0), HSL-MODEL (1) }' },
+	{ name => 'redmode', type => '0 <= int8 <= 1',
+	  desc => 'Red/hue application mode { TRUE, FALSE }' },
+	{ name => 'greenmode', type => '0 <= int8 <= 1',
+	  desc => 'Green/saturation application mode { TRUE, FALSE }' },
+	{ name => 'bluemode', type => '0 <= int8 <= 1',
+	  desc => 'Blue/luminance application mode { TRUE, FALSE }' }
+    );
+
+    %invoke = (
+	code => <<'CODE'
+{
+  if (gimp_pdb_item_is_attached (GIMP_ITEM (drawable), NULL,
+                                 GIMP_PDB_ITEM_CONTENT, error) &&
+      gimp_pdb_item_is_not_group (GIMP_ITEM (drawable), error))
+    {
+      GeglNode *node =
+        gegl_node_new_child (NULL,
+                             "operation", "gegl:alien-map",
+			     "color-model",      (gint)     colormodel,
+                             "cpn-1-frequency",  (gdouble)  redfrequency,
+                             "cpn-2-frequency",  (gdouble)  greenfrequency,
+                             "cpn-3-frequency",  (gdouble)  bluefrequency,
+                             "cpn-1-phaseshift", (gdouble)  redangle,
+                             "cpn-2-phaseshift", (gdouble)  greenangle,
+                             "cpn-3-phaseshift", (gdouble)  blueangle,
+                             "cpn-1-keep",       (gboolean) !redmode,
+                             "cpn-2-keep",       (gboolean) !greenmode,
+                             "cpn-3-keep",       (gboolean) !bluemode,
+                             NULL);
+
+      gimp_drawable_apply_operation (drawable, progress,
+                                     C_("undo-type", "Alien Map"),
+                                     node);
+
+      g_object_unref (node);
+    }
+  else
+    success = FALSE;
+}
+CODE
+    );
+}
+
+sub plug_in_antialias {
+    $blurb = 'Antialias using the Scale3X edge-extrapolation algorithm';
+
+    $help = <<'HELP';
+No more help.
+HELP
+
+    &std_pdb_compat('gegl:antialias');
+    $date = '2013';
+
+    @inargs = (
+	{ name => 'run_mode', type => 'enum GimpRunMode', dead => 1,
+	  desc => 'The run mode' },
+	{ name => 'image', type => 'image', dead => 1,
+	  desc => 'Input image (unused)' },
+	{ name => 'drawable', type => 'drawable',
+	  desc => 'Input drawable' }
+    );
+
+    %invoke = (
+	code => <<'CODE'
+{
+  if (gimp_pdb_item_is_attached (GIMP_ITEM (drawable), NULL,
+                                 GIMP_PDB_ITEM_CONTENT, error) &&
+      gimp_pdb_item_is_not_group (GIMP_ITEM (drawable), error))
+    {
+      GeglNode *node =
+        gegl_node_new_child (NULL,
+                             "operation", "gegl:antialias",
+                             NULL);
+
+      gimp_drawable_apply_operation (drawable, progress,
+                                     C_("undo-type", "Antialias"),
+                                     node);
+
+      g_object_unref (node);
+    }
+  else
+    success = FALSE;
+}
+CODE
+    );
+}
+
 sub plug_in_autocrop {
     $blurb = 'Remove empty borders from the image';
 
@@ -73,10 +191,11 @@ CODE
 }
 
 sub plug_in_autocrop_layer {
-    $blurb = 'Remove empty borders from the layer';
+    $blurb = 'Crop the active layer based on empty borders of the input drawable';
 
     $help = <<'HELP';
-Remove empty borders from the layer.
+Crop the active layer of the input "image" based on empty borders of the input "drawable".
+\n\nThe input drawable serves as a base for detecting cropping extents (transparency or background color), and is not necessarily the cropped layer (the current active layer).
 HELP
 
     &std_pdb_misc;
@@ -115,6 +234,80 @@ HELP
 
           gimp_image_undo_group_end (image);
         }
+    }
+  else
+    success = FALSE;
+}
+CODE
+    );
+}
+
+sub plug_in_colors_channel_mixer {
+    $blurb = 'Alter colors by mixing RGB Channels';
+
+    $help = <<'HELP';
+This plug-in mixes the RGB channels.
+HELP
+
+    &std_pdb_compat('gegl:channel-mixer');
+    $date = '2013';
+
+    @inargs = (
+	{ name => 'run_mode', type => 'enum GimpRunMode', dead => 1,
+	  desc => 'The run mode' },
+	{ name => 'image', type => 'image', dead => 1,
+	  desc => 'Input image (unused)' },
+	{ name => 'drawable', type => 'drawable',
+	  desc => 'Input drawable' },
+	{ name => 'monochrome', type => '0 <= int32 <= 1',
+	  desc => 'Monochrome { TRUE, FALSE }' },
+	{ name => 'rr_gain', type => '-2 <= float <= 2',
+	  desc => 'Set the red gain for the red channel' },
+	{ name => 'rg_gain', type => '-2 <= float <= 2',
+	  desc => 'Set the green gain for the red channel' },
+	{ name => 'rb_gain', type => '-2 <= float <= 2',
+	  desc => 'Set the blue gain for the red channel' },
+	{ name => 'gr_gain', type => '-2 <= float <= 2',
+	  desc => 'Set the red gain for the green channel' },
+	{ name => 'gg_gain', type => '-2 <= float <= 2',
+	  desc => 'Set the green gain for the green channel' },
+	{ name => 'gb_gain', type => '-2 <= float <= 2',
+	  desc => 'Set the blue gain for the green channel' },
+	{ name => 'br_gain', type => '-2 <= float <= 2',
+	  desc => 'Set the red gain for the blue channel' },
+	{ name => 'bg_gain', type => '-2 <= float <= 2',
+	  desc => 'Set the green gain for the blue channel' },
+	{ name => 'bb_gain', type => '-2 <= float <= 2',
+	  desc => 'Set the blue gain for the blue channel' },
+    );
+
+    %invoke = (
+	code => <<'CODE'
+{
+  if (gimp_pdb_item_is_attached (GIMP_ITEM (drawable), NULL,
+                                 GIMP_PDB_ITEM_CONTENT, error) &&
+      gimp_pdb_item_is_not_group (GIMP_ITEM (drawable), error))
+    {
+      GeglNode *node =
+        gegl_node_new_child (NULL,
+                             "operation", "gegl:channel-mixer",
+			     "monochrome", (gboolean) monochrome,
+                             "rr-gain", (gdouble) rr_gain,
+                             "rg-gain", (gdouble) rg_gain,
+                             "rb-gain", (gdouble) rb_gain,
+                             "gr-gain", (gdouble) gr_gain,
+                             "gg-gain", (gdouble) gg_gain,
+                             "gb-gain", (gdouble) gb_gain,
+                             "br-gain", (gdouble) br_gain,
+                             "bg-gain", (gdouble) bg_gain,
+                             "bb-gain", (gdouble) bb_gain,
+                             NULL);
+
+      gimp_drawable_apply_operation (drawable, progress,
+                                     C_("undo-type", "Channel Mixer"),
+                                     node);
+
+      g_object_unref (node);
     }
   else
     success = FALSE;
@@ -244,6 +437,179 @@ CODE
     );
 }
 
+sub plug_in_mblur {
+    $blurb = 'Simulate movement using directional blur';
+
+    $help = <<'HELP';
+This plug-in simulates the effect seen when
+photographing a moving object at a slow shutter
+speed. Done by adding multiple displaced copies.
+HELP
+
+    &std_pdb_compat('gegl:motion-blur-linear, -zoom, -cirular');
+    $date = '2013';
+
+    @inargs = (
+	{ name => 'run_mode', type => 'enum GimpRunMode', dead => 1,
+	  desc => 'The run mode' },
+	{ name => 'image', type => 'image', dead => 1,
+	  desc => 'Input image (unused)' },
+	{ name => 'drawable', type => 'drawable',
+	  desc => 'Input drawable' },
+	{ name => 'type', type => '0 <= int32 <= 2',
+	  desc => 'Type of motion blur { LINEAR (0), RADIAL (1), ZOOM (2) }' },
+	{ name => 'length', type => 'float',
+	  desc => 'Length' },
+	{ name => 'angle', type => '0 <= float <= 360',
+	  desc => 'Angle' },
+	{ name => 'center_x', type => 'float',
+	  desc => 'Center X' },
+	{ name => 'center_y', type => 'float',
+	  desc => 'Center Y' }
+    );
+
+    %invoke = (
+	code => <<'CODE'
+{
+  if (gimp_pdb_item_is_attached (GIMP_ITEM (drawable), NULL,
+                                 GIMP_PDB_ITEM_CONTENT, error) &&
+      gimp_pdb_item_is_not_group (GIMP_ITEM (drawable), error))
+    {
+      GeglNode *node = NULL;
+
+      if (type == 0)
+        {
+          node =  gegl_node_new_child (NULL,
+                                       "operation", "gegl:motion-blur-linear",
+                                       "length",    length,
+                                       "angle",     angle,
+                                        NULL);
+        }
+      else if (type == 1)
+        {
+          node =  gegl_node_new_child (NULL,
+                                       "operation", "gegl:motion-blur-circular",
+                                       "center-x",  center_x,
+                                       "center-y",  center_y,
+                                       "angle",     angle,
+                                        NULL);
+        }
+      else if (type == 2)
+        {
+	  gdouble factor = CLAMP (length / 256.0, 0.0, 1.0);
+          node =  gegl_node_new_child (NULL,
+                                       "operation", "gegl:motion-blur-zoom",
+                                       "center-x",  center_x,
+                                       "center-y",  center_y,
+                                       "factor",    factor,
+                                        NULL);
+        }
+
+      if (node != NULL)
+        {
+          gimp_drawable_apply_operation (drawable, progress,
+                                         C_("undo-type", "Motion Blur"),
+                                         node);
+
+          g_object_unref (node);
+        }
+      else
+        success = FALSE;
+
+    }
+  else
+    success = FALSE;
+}
+CODE
+    );
+}
+
+sub plug_in_mblur_inward {
+    $blurb = 'Simulate movement using directional blur';
+
+    $help = <<'HELP';
+This procedure is equivalent to plug-in-mblur but 
+performs the zoom blur inward instead of outward.
+HELP
+
+    &std_pdb_compat('gegl:motion-blur-linear, -zoom, -cirular');
+    $date = '2013';
+
+    @inargs = (
+	{ name => 'run_mode', type => 'enum GimpRunMode', dead => 1,
+	  desc => 'The run mode' },
+	{ name => 'image', type => 'image', dead => 1,
+	  desc => 'Input image (unused)' },
+	{ name => 'drawable', type => 'drawable',
+	  desc => 'Input drawable' },
+	{ name => 'type', type => '0 <= int32 <= 2',
+	  desc => 'Type of motion blur { LINEAR (0), RADIAL (1), ZOOM (2) }' },
+	{ name => 'length', type => 'float',
+	  desc => 'Length' },
+	{ name => 'angle', type => '0 <= float <= 360',
+	  desc => 'Angle' },
+	{ name => 'center_x', type => 'float',
+	  desc => 'Center X' },
+	{ name => 'center_y', type => 'float',
+	  desc => 'Center Y' }
+    );
+
+    %invoke = (
+	code => <<'CODE'
+{
+  if (gimp_pdb_item_is_attached (GIMP_ITEM (drawable), NULL,
+                                 GIMP_PDB_ITEM_CONTENT, error) &&
+      gimp_pdb_item_is_not_group (GIMP_ITEM (drawable), error))
+    {
+      GeglNode *node = NULL;
+
+      if (type == 0)
+        {
+          node =  gegl_node_new_child (NULL,
+                                       "operation", "gegl:motion-blur-linear",
+                                       "length",    length,
+                                       "angle",     angle,
+                                        NULL);
+        }
+      else if (type == 1)
+        {
+          node =  gegl_node_new_child (NULL,
+                                       "operation", "gegl:motion-blur-circular",
+                                       "center-x",  center_x,
+                                       "center-y",  center_y,
+                                       "angle",     angle,
+                                        NULL);
+        }
+      else if (type == 2)
+        {
+          gdouble factor = CLAMP (-length / (256.0 - length), -10.0, 0.0);
+          node =  gegl_node_new_child (NULL,
+                                       "operation", "gegl:motion-blur-zoom",
+                                       "center-x",  center_x,
+                                       "center-y",  center_y,
+                                       "factor",    factor,
+                                        NULL);
+        }
+
+      if (node != NULL)
+        {
+          gimp_drawable_apply_operation (drawable, progress,
+                                         C_("undo-type", "Motion Blur"),
+                                         node);
+
+          g_object_unref (node);
+        }
+      else
+        success = FALSE;
+
+    }
+  else
+    success = FALSE;
+}
+CODE
+    );
+}
+
 sub plug_in_pixelize {
     $blurb = 'Simplify image into an array of solid-colored squares';
 
@@ -275,7 +641,7 @@ HELP
     {
       GeglNode *node =
         gegl_node_new_child (NULL,
-                             "operation", "gegl:pixelise",
+                             "operation", "gegl:pixelize",
                              "size-x",    pixel_width,
                              "size-y",    pixel_width,
                              NULL);
@@ -326,7 +692,7 @@ HELP
     {
       GeglNode *node =
         gegl_node_new_child (NULL,
-                             "operation", "gegl:pixelise",
+                             "operation", "gegl:pixelize",
                              "size-x",    pixel_width,
                              "size-y",    pixel_height,
                              NULL);
@@ -383,7 +749,7 @@ HELP
     {
       GeglNode *node =
         gegl_node_new_child (NULL,
-                             "operation", "gegl:polar-coords",
+                             "operation", "gegl:polar-coordinates",
                              "depth",     circle,
                              "angle",     angle,
                              "bw",        backwards, /* XXX name */
@@ -844,6 +1210,50 @@ CODE
     );
 }
 
+sub plug_in_make_seamless {
+    $blurb = 'Alters edges to make the image seamlessly tileable';
+
+    $help = <<'HELP';
+This plugin creates a seamless tileable from the input drawable.
+HELP
+
+    &std_pdb_compat('gegl:tile-seamless');
+    $date = '2013';
+
+    @inargs = (
+	{ name => 'run_mode', type => 'enum GimpRunMode', dead => 1,
+	  desc => 'The run mode' },
+	{ name => 'image', type => 'image', dead => 1,
+	  desc => 'Input image (unused)' },
+	{ name => 'drawable', type => 'drawable',
+	  desc => 'Input drawable' }
+    );
+
+    %invoke = (
+	code => <<'CODE'
+{
+  if (gimp_pdb_item_is_attached (GIMP_ITEM (drawable), NULL,
+                                 GIMP_PDB_ITEM_CONTENT, error) &&
+      gimp_pdb_item_is_not_group (GIMP_ITEM (drawable), error))
+    {
+      GeglNode *node =
+        gegl_node_new_child (NULL,
+                             "operation", "gegl:tile-seamless",
+                             NULL);
+
+      gimp_drawable_apply_operation (drawable, progress,
+                                     C_("undo-type", "Tile Seamless"),
+                                     node);
+
+      g_object_unref (node);
+    }
+  else
+    success = FALSE;
+}
+CODE
+    );
+}
+
 sub plug_in_vinvert {
     $blurb = 'Invert the brightness of each pixel';
 
@@ -1035,10 +1445,15 @@ CODE
               "gimppdb-utils.h"
               "gimp-intl.h");
 
-@procs = qw(plug_in_autocrop
+@procs = qw(plug_in_alienmap2
+            plug_in_antialias
+            plug_in_autocrop
             plug_in_autocrop_layer
+            plug_in_colors_channel_mixer
             plug_in_colortoalpha
 	    plug_in_cubism
+            plug_in_mblur
+            plug_in_mblur_inward
             plug_in_pixelize
             plug_in_pixelize2
             plug_in_polar_coords
@@ -1050,6 +1465,7 @@ CODE
             plug_in_shift
 	    plug_in_spread
             plug_in_threshold_alpha
+            plug_in_make_seamless
             plug_in_vinvert
 	    plug_in_waves
             plug_in_whirl_pinch);

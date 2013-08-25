@@ -40,6 +40,16 @@
 
 static const GimpStringActionEntry filters_actions[] =
 {
+  { "filters-alien-map", GIMP_STOCK_GEGL,
+    NC_("filters-action", "_Alien Map..."), NULL, NULL,
+    "gegl:alien-map",
+    NULL /* FIXME GIMP_HELP_FILTER_ALIEN_MAP */ },
+
+  { "filters-antialias", GIMP_STOCK_GEGL,
+    NC_("filters-action", "_Antialias..."), NULL, NULL,
+    "gegl:antialias",
+    NULL /* FIXME GIMP_HELP_FILTER_ANTIALIAS */ },
+
   { "filters-c2g", GIMP_STOCK_GEGL,
     NC_("filters-action", "Color to Gray..."), NULL, NULL,
     "gegl:c2g",
@@ -49,6 +59,11 @@ static const GimpStringActionEntry filters_actions[] =
     NC_("filters-action", "Ca_rtoon..."), NULL, NULL,
     "gegl:cartoon",
     NULL /* FIXME GIMP_HELP_FILTER_CARTOON */ },
+
+  { "filters-channel-mixer", GIMP_STOCK_GEGL,
+    NC_("filters-action", "_Channel Mixer..."), NULL, NULL,
+    "gegl:channel-mixer",
+    NULL /* FIXME GIMP_HELP_FILTER_CHANNEL_MIXER */ },
 
   { "filters-checkerboard", GIMP_STOCK_GEGL,
     NC_("filters-action", "_Checkerboard..."), NULL, NULL,
@@ -235,6 +250,11 @@ static const GimpStringActionEntry filters_actions[] =
     "gimp:threshold-alpha",
     NULL /* FIXME GIMP_HELP_FILTER_POLAR_COORDINATES */ },
 
+  { "filters-tile-seamless", GIMP_STOCK_GEGL,
+    NC_("filters-action", "_Tile Seamless..."), NULL, NULL,
+    "gegl:tile-seamless",
+    NULL /* FIXME GIMP_HELP_FILTER_TILE_SEAMLESS */ },
+
   { "filters-unsharp-mask", GIMP_STOCK_GEGL,
     NC_("filters-action", "_Unsharp Mask..."), NULL, NULL,
     "gegl:unsharp-mask",
@@ -317,6 +337,8 @@ filters_actions_update (GimpActionGroup *group,
 #define SET_SENSITIVE(action,condition) \
         gimp_action_group_set_action_sensitive (group, action, (condition) != 0)
 
+  SET_SENSITIVE ("filters-alien-map",               writable);
+  SET_SENSITIVE ("filters-antialias",               writable);
   SET_SENSITIVE ("filters-c2g",                     writable && !gray);
   SET_SENSITIVE ("filters-cartoon",                 writable);
   SET_SENSITIVE ("filters-checkerboard",            writable);
@@ -356,6 +378,7 @@ filters_actions_update (GimpActionGroup *group,
   SET_SENSITIVE ("filters-shift",                   writable);
   SET_SENSITIVE ("filters-softglow",                writable);
   SET_SENSITIVE ("filters-threshold-alpha",         writable && alpha);
+  SET_SENSITIVE ("filters-tile-seamless",           writable);
   SET_SENSITIVE ("filters-unsharp-mask",            writable);
   SET_SENSITIVE ("filters-vignette",                writable);
   SET_SENSITIVE ("filters-waves",                   writable);

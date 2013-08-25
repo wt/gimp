@@ -793,11 +793,6 @@ gimp_drawable_real_convert_type (GimpDrawable      *drawable,
 static GeglBuffer *
 gimp_drawable_real_get_buffer (GimpDrawable *drawable)
 {
-#if 0
-  gegl_buffer_flush (drawable->private->buffer);
-  gimp_gegl_buffer_refetch_tiles (drawable->private->buffer);
-#endif
-
   return drawable->private->buffer;
 }
 
@@ -1626,6 +1621,18 @@ gimp_drawable_get_base_type (const GimpDrawable *drawable)
   return gimp_babl_format_get_base_type (format);
 }
 
+GimpComponentType
+gimp_drawable_get_component_type (const GimpDrawable *drawable)
+{
+  const Babl *format;
+
+  g_return_val_if_fail (GIMP_IS_DRAWABLE (drawable), -1);
+
+  format = gegl_buffer_get_format (drawable->private->buffer);
+
+  return gimp_babl_format_get_component_type (format);
+}
+
 GimpPrecision
 gimp_drawable_get_precision (const GimpDrawable *drawable)
 {
@@ -1754,6 +1761,13 @@ gimp_drawable_get_floating_sel_filter (GimpDrawable *drawable)
 {
   g_return_val_if_fail (GIMP_IS_DRAWABLE (drawable), NULL);
   g_return_val_if_fail (gimp_drawable_get_floating_sel (drawable) != NULL, NULL);
+
+  /*
+   * Ensure that the graph is construced before the filter is used.
+   * Otherwise, we rely on the projection to cause the graph to be constructed,
+   * which fails for images that aren't displayed.
+   */
+  gimp_filter_get_node (GIMP_FILTER (drawable));
 
   return drawable->private->fs_filter;
 }

@@ -113,7 +113,6 @@ struct _GimpImageWindowPrivate
 
 typedef struct
 {
-  GimpImageWindow *window;
   gint             x;
   gint             y;
 } PosCorrectionData;
@@ -316,6 +315,7 @@ gimp_image_window_constructed (GObject *object)
   GimpImageWindowPrivate *private = GIMP_IMAGE_WINDOW_GET_PRIVATE (window);
   GimpGuiConfig          *config;
 
+  g_assert (GIMP_IS_GIMP (private->gimp));
   g_assert (GIMP_IS_UI_MANAGER (private->menubar_manager));
 
   g_signal_connect_object (private->dialog_factory, "dock-window-added",
@@ -335,7 +335,7 @@ gimp_image_window_constructed (GObject *object)
                     G_CALLBACK (gimp_image_window_hide_tooltip),
                     window);
 
-  config = GIMP_GUI_CONFIG (gimp_dialog_factory_get_context (private->dialog_factory)->gimp->config);
+  config = GIMP_GUI_CONFIG (private->gimp->config);
 
   /* Create the window toplevel container */
   private->main_vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
@@ -537,9 +537,7 @@ gimp_image_window_delete_event (GtkWidget   *widget,
   GimpImageWindow        *window  = GIMP_IMAGE_WINDOW (widget);
   GimpDisplayShell       *shell   = gimp_image_window_get_active_shell (window);
   GimpImageWindowPrivate *private = GIMP_IMAGE_WINDOW_GET_PRIVATE (window);
-  GimpGuiConfig          *config;
-
-  config = GIMP_GUI_CONFIG (gimp_dialog_factory_get_context (private->dialog_factory)->gimp->config);
+  GimpGuiConfig          *config  = GIMP_GUI_CONFIG (private->gimp->config);
 
   if (config->single_window_mode)
     gimp_ui_manager_activate_action (gimp_image_window_get_ui_manager (window),
@@ -626,7 +624,7 @@ gimp_image_window_window_state_event (GtkWidget           *widget,
 
       if (iconified)
         {
-          if (gimp_displays_get_num_visible (shell->display->gimp) == 0)
+          if (gimp_displays_get_num_visible (private->gimp) == 0)
             {
               GIMP_LOG (WM, "No displays visible any longer");
 
@@ -815,8 +813,7 @@ gimp_image_window_get_aux_info (GimpSessionManaged *session_managed)
   g_return_val_if_fail (GIMP_IS_IMAGE_WINDOW (session_managed), NULL);
 
   private = GIMP_IMAGE_WINDOW_GET_PRIVATE (session_managed);
-
-  config = GIMP_GUI_CONFIG (gimp_dialog_factory_get_context (private->dialog_factory)->gimp->config);
+  config  = GIMP_GUI_CONFIG (private->gimp->config);
 
   if (config->single_window_mode)
     {
@@ -982,7 +979,7 @@ gimp_image_window_new (Gimp              *gimp,
                          GTK_WIN_POS_CENTER,
                          NULL);
 
-  gimp->image_windows = g_list_prepend (gimp->image_windows, window);
+  gimp->image_windows = g_list_append (gimp->image_windows, window);
 
   return window;
 }
@@ -1054,12 +1051,6 @@ gimp_image_window_add_shell (GimpImageWindow  *window,
 
   private->shells = g_list_append (private->shells, shell);
 
-  if (g_list_length (private->shells) > 1)
-    {
-      gimp_image_window_keep_canvas_pos (window);
-      gtk_notebook_set_show_tabs (GTK_NOTEBOOK (private->notebook), TRUE);
-    }
-
   tab_label = gimp_image_window_create_tab_label (window, shell);
 
   gtk_notebook_append_page (GTK_NOTEBOOK (private->notebook),
@@ -1098,12 +1089,6 @@ gimp_image_window_remove_shell (GimpImageWindow  *window,
 
   gtk_container_remove (GTK_CONTAINER (private->notebook),
                         GTK_WIDGET (shell));
-
-  if (g_list_length (private->shells) == 1)
-    {
-      gimp_image_window_keep_canvas_pos (window);
-      gtk_notebook_set_show_tabs (GTK_NOTEBOOK (private->notebook), FALSE);
-    }
 }
 
 gint
@@ -1468,12 +1453,12 @@ gimp_image_window_get_default_dockbook (GimpImageWindow  *window)
  * gimp_image_window_keep_canvas_pos:
  * @window:
  *
- * Stores the coordinate of the current shell image origin in
- * GtkWindow coordinates and on the first size-allocate sets the
- * offsets in the shell so the image origin remains the same in
- * GtkWindow coordinates.
+ * Stores the coordinates of the current image canvas origin relatively
+ * its GtkWindow; and on the first size-allocate sets the offsets in
+ * the shell so that the image origin remains the same (even on another
+ * GtkWindow).
  *
- * Exampe use case: The user hides docks attached to the side of image
+ * Example use case: The user hides docks attached to the side of image
  * windows. You want the image to remain fixed on the screen though,
  * so you use this function to keep the image fixed after the docks
  * have been hidden.
@@ -1501,7 +1486,6 @@ gimp_image_window_keep_canvas_pos (GimpImageWindow *window)
     {
       PosCorrectionData *data = g_new0 (PosCorrectionData, 1);
 
-      data->window = window;
       data->x      = image_origin_window_x;
       data->y      = image_origin_window_y;
 
@@ -1512,6 +1496,38 @@ gimp_image_window_keep_canvas_pos (GimpImageWindow *window)
     }
 }
 
+
+/**
+ * gimp_image_window_update_tabs:
+ * @window: the Image Window to update.
+ *
+ * Holds the logics of whether shell tabs are to be shown or not in the
+ * Image Window @window. This function should be called after every
+ * change to @window where one might expect tab visibility to change.
+ *
+ * No direct call to gtk_notebook_set_show_tabs() should ever be made.
+ * If we change the logics of tab hiding, we should only change this
+ * procedure instead.
+ **/
+void
+gimp_image_window_update_tabs (GimpImageWindow  *window)
+{
+  GimpImageWindowPrivate *private;
+  GimpGuiConfig          *config;
+
+  g_return_if_fail (GIMP_IS_IMAGE_WINDOW (window));
+
+  private = GIMP_IMAGE_WINDOW_GET_PRIVATE (window);
+  config = GIMP_GUI_CONFIG (private->gimp->config);
+
+  gtk_notebook_set_show_tabs (GTK_NOTEBOOK (private->notebook),
+                              config->single_window_mode &&
+                              ! config->hide_docks       &&
+                              ((private->active_shell          &&
+                                private->active_shell->display &&
+                                gimp_display_get_image (private->active_shell->display)) ||
+                               g_list_length (private->shells) > 1));
+}
 
 /*  private functions  */
 
@@ -1549,6 +1565,7 @@ gimp_image_window_config_notify (GimpImageWindow *window,
       gimp_image_window_keep_canvas_pos (window);
       gtk_widget_set_visible (private->left_docks, show_docks);
       gtk_widget_set_visible (private->right_docks, show_docks);
+      gimp_image_window_update_tabs (window);
     }
 
   /* Session management */
@@ -1589,23 +1606,24 @@ gimp_image_window_shell_size_allocate (GimpDisplayShell  *shell,
                                        GtkAllocation     *allocation,
                                        PosCorrectionData *data)
 {
-  GimpImageWindow *window               = data->window;
+  GimpImageWindow *window               = gimp_display_shell_get_window (shell);
   gint             image_origin_shell_x = -1;
   gint             image_origin_shell_y = -1;
 
-  gtk_widget_translate_coordinates (GTK_WIDGET (window),
-                                    GTK_WIDGET (shell->canvas),
-                                    data->x, data->y,
-                                    &image_origin_shell_x,
-                                    &image_origin_shell_y);
-
-  /* Note that the shell offset isn't the offset of the image into the
-   * shell, but the offset of the shell relative to the image,
-   * therefore we need to negate
-   */
-  gimp_display_shell_scroll_set_offset (shell,
-                                        -image_origin_shell_x,
-                                        -image_origin_shell_y);
+  if (gtk_widget_translate_coordinates (GTK_WIDGET (window),
+                                        GTK_WIDGET (shell->canvas),
+                                        data->x, data->y,
+                                        &image_origin_shell_x,
+                                        &image_origin_shell_y))
+    {
+      /* Note that the shell offset isn't the offset of the image into the
+       * shell, but the offset of the shell relative to the image,
+       * therefore we need to negate
+       */
+      gimp_display_shell_scroll_set_offset (shell,
+                                            -image_origin_shell_x,
+                                            -image_origin_shell_y);
+    }
 
   g_signal_handlers_disconnect_by_func (shell,
                                         gimp_image_window_shell_size_allocate,
