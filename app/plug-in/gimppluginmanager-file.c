@@ -24,6 +24,7 @@
 #include "plug-in-types.h"
 
 #include "core/gimp.h"
+//#include "core/gimppalette.h"
 #include "core/gimpparamspecs.h"
 
 #include "file/file-procedure.h"
@@ -235,4 +236,61 @@ gimp_plug_in_manager_uri_has_exporter (GimpPlugInManager *manager,
                                        const gchar       *uri)
 {
   return file_procedure_find (manager->export_procs, uri, NULL) != NULL;
+}
+
+gboolean
+gimp_plug_in_manager_register_palette_load_handler (GimpPlugInManager *manager,
+                                                    const gchar       *name,
+                                                    const gchar       *extensions,
+                                                    const gchar       *prefixes,
+                                                    const gchar       *magics)
+{
+  GimpPlugInProcedure *file_proc;
+  GimpProcedure       *procedure;
+  GSList              *list;
+
+  g_return_val_if_fail (GIMP_IS_PLUG_IN_MANAGER (manager), FALSE);
+  g_return_val_if_fail (name != NULL, FALSE);
+
+  if (manager->current_plug_in && manager->current_plug_in->plug_in_def)
+    list = manager->current_plug_in->plug_in_def->procedures;
+  else
+    list = manager->plug_in_procedures;
+
+  file_proc = gimp_plug_in_procedure_find (list, name);
+
+  if (! file_proc)
+    {
+      gimp_message (manager->gimp, NULL, GIMP_MESSAGE_ERROR,
+                    "attempt to register nonexistent load handler \"%s\"",
+                    name);
+      return FALSE;
+    }
+
+  procedure = GIMP_PROCEDURE (file_proc);
+
+  if ((procedure->num_args   < 3)                        ||
+      (procedure->num_values < 1)                        ||
+      ! GIMP_IS_PARAM_SPEC_INT32    (procedure->args[0]) ||
+      ! G_IS_PARAM_SPEC_STRING      (procedure->args[1]) ||
+      ! G_IS_PARAM_SPEC_STRING      (procedure->args[2]) ||
+      ! G_IS_PARAM_SPEC_STRING      (procedure->values[0]))
+      //! GIMP_IS_PALETTE             (procedure->values[0]))
+    {
+      gimp_message (manager->gimp, NULL, GIMP_MESSAGE_ERROR,
+                    "load handler \"%s\" does not take the standard "
+                    "palette load handler args", name);
+      return FALSE;
+    }
+
+/*
+  gimp_plug_in_procedure_set_file_proc (file_proc,
+                                        extensions, prefixes, magics);
+
+
+*/
+  if (! g_slist_find (manager->load_procs, file_proc))
+    manager->palette_load_procs = g_slist_prepend (manager->palette_load_procs,
+                                                   file_proc);
+  return TRUE;
 }

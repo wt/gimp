@@ -44,5 +44,11 @@ gboolean   gimp_plug_in_manager_register_thumb_loader (GimpPlugInManager *manage
 gboolean   gimp_plug_in_manager_uri_has_exporter      (GimpPlugInManager *manager,
                                                        const gchar       *uri);
 
+gboolean   gimp_plug_in_manager_register_palette_load_handler
+                                                      (GimpPlugInManager *manager,
+                                                       const gchar       *name,
+                                                       const gchar       *extensions,
+                                                       const gchar       *prefixes,
+                                                       const gchar       *magics);
 
 #endif /* __GIMP_PLUG_IN_MANAGER_FILE_H__ */

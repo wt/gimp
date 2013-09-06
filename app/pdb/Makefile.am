@@ -67,6 +67,7 @@ libappinternal_procs_a_SOURCES = \
 	message-cmds.c			\
 	paint-tools-cmds.c		\
 	palette-cmds.c			\
+	palette-fileops-cmds.c		\
 	palette-select-cmds.c		\
 	palettes-cmds.c			\
 	paths-cmds.c			\

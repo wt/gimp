@@ -35,6 +35,7 @@ pdb_sources = \
 	pdb/message.pdb			\
 	pdb/paint_tools.pdb		\
 	pdb/palette.pdb			\
+	pdb/palette_fileops.pdb			\
 	pdb/palette_select.pdb		\
 	pdb/palettes.pdb		\
 	pdb/paths.pdb			\

@@ -1,0 +1,79 @@
+# GIMP - The GNU Image Manipulation Program
+# Copyright (C) 2013 Warren Turkal
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+sub palette_register_load_handler {
+    $blurb = 'blurb';
+    $help = 'help';
+
+    $author = 'Warren Turkal <wt@penguintechs.org>';
+    $copyright = 'Warren Turkal';
+    $date = '2013';
+    $since = '2.8';
+
+    @inargs = (
+        { name => 'procedure_name', type => 'string', non_empty => 1,
+          desc => 'The name of the procedure to be used for loading' },
+        { name => 'extensions', type => 'string', no_validate => 1,
+          desc => 'comma separated list of extensions this handler
+                   can load (i.e. "ase,aco")' },
+        { name => 'prefixes', type => 'string', no_validate => 1,
+          desc => 'comma separated list of prefixes this handler
+                   can load (i.e. "http:,ftp:")' },
+        { name => 'magics', type => 'string', no_validate => 1,
+          desc => 'comma separated list of magic file information
+                   this handler can load (i.e. "0,string,GIF")' }
+    );
+
+    %invoke = (
+	code => <<'CODE'
+{
+#if 0
+  g_message(procedure_name);
+  g_message(extensions);
+  g_message(prefixes);
+  g_message(magics);
+#endif
+
+  gchar *canonical = gimp_canonicalize_identifier (procedure_name);
+
+  success = gimp_plug_in_manager_register_palette_load_handler (gimp->plug_in_manager,
+                                                                canonical,
+                                                                extensions, prefixes,
+                                                                magics);
+
+  g_free (canonical);
+}
+CODE
+    );
+}
+
+@headers = qw("core/gimp.h"
+              "core/gimp-utils.h"
+              "plug-in/gimppluginmanager.h"
+              "plug-in/gimppluginmanager-file.h"
+              "core/gimpdatafactory.h");
+
+@procs = qw(palette_register_load_handler
+            );
+
+%exports = (app => [@procs], lib => [@procs]);
+
+$desc = 'Palette File Operations';
+$doc_title = 'gimppalettefileops';
+$doc_short_desc = 'Functions providing palette file operations.';
+$doc_long_desc = 'Functions providing palette file operations.';
+
+1;

@@ -20,6 +20,7 @@
 #ifndef __GIMP_PLUG_IN_H__
 #define __GIMP_PLUG_IN_H__
 
+#include <glib.h>
 
 #include "core/gimpobject.h"
 #include "gimppluginprocframe.h"

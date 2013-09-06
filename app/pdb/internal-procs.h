@@ -57,6 +57,7 @@ void   register_layer_procs              (GimpPDB *pdb);
 void   register_message_procs            (GimpPDB *pdb);
 void   register_paint_tools_procs        (GimpPDB *pdb);
 void   register_palette_procs            (GimpPDB *pdb);
+void   register_palette_fileops_procs    (GimpPDB *pdb);
 void   register_palette_select_procs     (GimpPDB *pdb);
 void   register_palettes_procs           (GimpPDB *pdb);
 void   register_paths_procs              (GimpPDB *pdb);

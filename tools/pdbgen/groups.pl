@@ -33,6 +33,7 @@
     message
     paint_tools
     palette
+    palette_fileops
     palette_select
     palettes
     paths
